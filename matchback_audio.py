@@ -1,5 +1,5 @@
 """
-Audio Matcher Backer v0.1
+Audio Matcher Backer v0.2
 Given a V1 timeline, kinda sorta cut in embedded audio from V1 into A1 if it works and stuff.
 
 Written by Michael Jordan <michael@glowingpixel.com>
