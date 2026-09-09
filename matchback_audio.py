@@ -8,8 +8,11 @@ Given a V1 timeline, kinda sorta cut in embedded audio from V1 into A1 if it wor
 from __future__ import annotations
 import typing, sys, json
 
-if typing.TYPE_CHECKING:
+# Just some lil' things for me heehee
+if "resovle" not in globals():
 	from resolvecommon.session import resolve
+
+if typing.TYPE_CHECKING:
 	import DaVinciResolveScript as bmd
 
 resolve:bmd.Resolve
@@ -31,6 +34,24 @@ except Exception as e:
 track_items = current_timeline.GetItemListInTrack("video", 1)
 total_count = len(track_items)
 
+# Not sure you CAN have 0 audio tracks, but just in case...
+if current_timeline.GetTrackCount("audio") < 1:
+
+	print("Inserting A1 Mono track")
+
+	if not current_timeline.AddTrack("audio"):
+		
+		print("Could not create track A1 for some reason.", file=sys.stderr)
+		sys.exit(3)
+
+else:
+	print("Audio track count is ", current_timeline.GetTrackCount("audio"))
+
+if current_timeline.GetIsTrackLocked("audio", 1):
+
+	print("A1 is locked.  Please unlock it to proceed.", file=sys.stderr)
+	sys.exit(4)
+
 if total_count < 1:
 	print("No clips found in V1.", file=sys.stderr)
 	sys.exit(2)
@@ -41,13 +62,13 @@ for track_item in track_items:
 
 	counter += 1
 
-	print(f"[{str(counter).rjust(len(str(total_count)))} / {total_count}]", end="\r")
+	print(f"[{str(counter).rjust(len(str(total_count)))} / {total_count}]: ", end="")
 
 	timeline_start  = track_item.GetStart()
 	source_item     = track_item.GetMediaPoolItem()
 
 	if not source_item:
-		print(f"* Skipped {track_item.GetName()}: Does not exist in media pool")
+		print(f"* Skipped {track_item.GetName()}: Does not exist in media pool", file=sys.stderr)
 		continue
 
 	source_start    = track_item.GetSourceStartFrame()
@@ -55,7 +76,7 @@ for track_item in track_items:
 	source_audio_mapping = json.loads(source_item.GetAudioMapping())
 
 	if source_audio_mapping.get("embedded_audio_channels", 0) == 0:
-		print(f"* Skipped {track_item.GetName()}: No sync audio (MOS)")
+		print(f"* Skipped {track_item.GetName()}: No sync audio (MOS)", file=sys.stderr)
 		continue
 
 	insert_audio_info:bmd.AppendClipInfo = dict(
@@ -68,4 +89,7 @@ for track_item in track_items:
 	)
 
 	if not current_mediapool.AppendToTimeline([insert_audio_info]):
-		print(f"* ")
+		print(f"*** {source_item.GetName()} not added, for unknown reasons", file=sys.stderr)
+		continue
+
+	print(f"{track_item.GetName()}", end="\r")
