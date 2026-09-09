@@ -1,24 +1,28 @@
 """
 Audio Matcher Backer v0.1
-Written by Michael Jordan <michael@glowingpixel.com>
+Given a V1 timeline, kinda sorta cut in embedded audio from V1 into A1 if it works and stuff.
 
-Given a V1 timeline, kinda sorta cut in embedded audio from V1 into A1 if it works.
+Written by Michael Jordan <michael@glowingpixel.com>
+https://github.com/mjiggidy/resolve_audio_matchback/
 """
 
 from __future__ import annotations
 import typing, sys, json
 
-# Just some lil' things for me heehee
-if "resovle" not in globals():
-	from resolvecommon.session import resolve
-
-if typing.TYPE_CHECKING:
-	import DaVinciResolveScript as bmd
-
-resolve:bmd.Resolve
-
-try:
+# Just some lil' things for me heehee shh
+if "resolve" not in globals():
 	
+	try:
+
+		import DaVinciResolveScript as bmd
+		resolve = bmd.scriptapp("Resolve")
+
+	except:
+
+		print("This script must be run from within Davinci Resolve.", file=sys.stderr)
+		sys.exit(5)
+try:
+
 	current_project   = resolve.GetProjectManager().GetCurrentProject()
 	current_mediapool = current_project.GetMediaPool()
 	current_timeline  = current_project.GetCurrentTimeline()
@@ -53,6 +57,7 @@ if current_timeline.GetIsTrackLocked("audio", 1):
 	sys.exit(4)
 
 if total_count < 1:
+	
 	print("No clips found in V1.", file=sys.stderr)
 	sys.exit(2)
 
@@ -68,6 +73,7 @@ for track_item in track_items:
 	source_item     = track_item.GetMediaPoolItem()
 
 	if not source_item:
+
 		print(f"* Skipped {track_item.GetName()}: Does not exist in media pool", file=sys.stderr)
 		continue
 
@@ -76,6 +82,7 @@ for track_item in track_items:
 	source_audio_mapping = json.loads(source_item.GetAudioMapping())
 
 	if source_audio_mapping.get("embedded_audio_channels", 0) == 0:
+
 		print(f"* Skipped {track_item.GetName()}: No sync audio (MOS)", file=sys.stderr)
 		continue
 
@@ -89,6 +96,7 @@ for track_item in track_items:
 	)
 
 	if not current_mediapool.AppendToTimeline([insert_audio_info]):
+
 		print(f"*** {source_item.GetName()} not added, for unknown reasons", file=sys.stderr)
 		continue
 
